@@ -1,0 +1,32 @@
+data_dir: "./data"
+api: 
+    enabled: true
+
+sources:
+    auditd:
+        type: file
+        include:
+            - audit.log
+transforms:
+    auditd_parse:
+        type: remap
+        inputs:
+            - auditd
+        source: |
+            . = parse_key_value!(.message)
+            .event_type = "auditd"
+            audit_msg = .msg[0]
+            audit_regex, err = parse_regex(audit_msg, r'^audit\((?P<time>\d+).*\):')
+            if err == null {
+              .auditd_timestamp = audit_regex.time
+            }
+            del(.msg)
+            .hostname = get_hostname!()
+sinks:
+    parsed_json:
+        inputs:
+            - auditd_parse
+        type: file
+        path: parsed_auditd.json
+        encoding:
+           codec: json

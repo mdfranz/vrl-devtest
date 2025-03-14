@@ -1,0 +1,8 @@
+.event_type = "auditd"
+audit_msg = .msg[0]
+audit_regex, err = parse_regex(audit_msg, r'^audit\((?P<time>\d+).*\):')
+if err == null {
+  .auditd_timestamp = audit_regex.time
+}
+del(.msg)
+.hostname = get_hostname!()
